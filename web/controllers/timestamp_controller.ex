@@ -3,18 +3,41 @@ defmodule Timestamp.TimestampController do
 
   use Timex
 
-  @months %{"January" => 1, "February" => 2, "March" => 3, "April" => 4, "May" => 5, "June" => 6,
-            "July" => 7, "August" => 8, "September" => 9, "October" => 10, "November" => 11, "December" => 12}
-
   def index(conn, params) do
     date =
       params["timestamp"]
-      |> String.split(" ")
-      |> IO.inspect
       |> parse_date
 
-    render(conn, "index.json", [timestamp: %{natural: "test", unix: "test"}] )
+    render(conn, "index.json", timestamp: date)
   end
 
-  defp parse_date()
+  defp parse_date(date) do
+    case Integer.parse(date) do
+      :error ->
+        parse_natural_date(date)
+      _ ->
+        parse_unix(date)
+    end
+  end
+
+  defp parse_unix(date) do
+    {:ok, unix} =
+      DateFormat.parse(date, "%s", :strftime)
+    {:ok, natural} =
+      DateFormat.format(unix, "%B %d, %Y", :strftime)
+    %{unix: date, natural: natural }
+  end
+
+  defp parse_natural_date(date) do
+    {:ok, natural} =
+      String.replace(date, ",", "")
+      |> String.split(" ")
+      |> Enum.join("-")
+      |> IO.inspect
+      |> DateFormat.parse("%B-%d-%Y", :strftime)
+    {:ok, unix} =
+      DateFormat.format(natural, "%s", :strftime)
+    {:ok, natural_date} = DateFormat.format(natural, "%B %d, %Y", :strftime)
+    %{unix: unix, natural: natural_date}
+  end
 end
