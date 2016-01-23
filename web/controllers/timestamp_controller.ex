@@ -29,15 +29,18 @@ defmodule Timestamp.TimestampController do
   end
 
   defp parse_natural_date(date) do
-    {:ok, natural} =
+    formatted_date =
       String.replace(date, ",", "")
       |> String.split(" ")
       |> Enum.join("-")
-      |> IO.inspect
-      |> DateFormat.parse("%B-%d-%Y", :strftime)
-    {:ok, unix} =
-      DateFormat.format(natural, "%s", :strftime)
-    {:ok, natural_date} = DateFormat.format(natural, "%B %d, %Y", :strftime)
-    %{unix: unix, natural: natural_date}
+      case DateFormat.parse(formatted_date, "%B-%d-%Y", :strftime) do
+        {:ok, natural_date} ->
+          {:ok, unix} =
+            DateFormat.format(natural_date, "%s", :strftime)
+          {:ok, natural} = DateFormat.format(natural_date, "%B %d, %Y", :strftime)
+          %{unix: unix, natural: natural}
+        _ ->
+          %{unix: "null", natural: "null"}
+      end
   end
 end
